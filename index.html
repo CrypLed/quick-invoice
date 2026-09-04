@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickInvoice — Free Invoice Generator, No Signup</title>
+<meta name="description" content="Make a professional invoice in your browser and save it as a PDF. No signup, no account, no data ever leaves your browser.">
+<style>
+  :root {
+    --ink: #1a1f2b;
+    --muted: #6b7280;
+    --line: #e2e5eb;
+    --accent: #2451ff;
+    --bg: #f7f8fb;
+    --card: #ffffff;
+    --danger: #d64545;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand { font-weight: 700; font-size: 18px; }
+  .brand span { color: var(--accent); }
+  .topbar .tagline { color: var(--muted); font-size: 13px; margin-left: 10px; }
+  .actions button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  .actions button.secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .actions button.danger { background: var(--danger); }
+
+  .layout { max-width: 900px; margin: 24px auto 80px; padding: 0 16px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 28px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; margin-top: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  input, textarea, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    background: white;
+  }
+  textarea { resize: vertical; min-height: 50px; }
+
+  .invoice-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+
+  table.items { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  table.items th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--muted); padding: 6px 8px; border-bottom: 2px solid var(--line);
+  }
+  table.items td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.items td.amount { text-align: right; white-space: nowrap; padding-top: 14px; }
+  table.items input { border: none; background: transparent; padding: 6px 4px; }
+  table.items input:focus { background: #f0f3ff; border-radius: 4px; }
+  .qty-rate { display: flex; gap: 6px; }
+  .qty-rate input { width: 70px; }
+  .row-remove { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; padding: 4px 8px; }
+
+  .add-row { margin-top: 10px; background: none; border: 1px dashed var(--line); color: var(--accent); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+  .totals { margin-top: 20px; margin-left: auto; width: 280px; }
+  .totals-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+  .totals-row.total { font-weight: 700; font-size: 18px; border-top: 2px solid var(--ink); padding-top: 10px; margin-top: 6px; }
+  .totals-row input { width: 70px; text-align: right; }
+
+  .footer-note {
+    max-width: 900px; margin: 0 auto 40px; padding: 0 16px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6;
+  }
+  .footer-note a { color: var(--accent); text-decoration: none; }
+  .wallet { font-family: monospace; font-size: 12px; background: #eef1f8; padding: 4px 8px; border-radius: 6px; }
+
+  @media print {
+    .topbar, .footer-note, .add-row, .row-remove, .no-print { display: none !important; }
+    body { background: white; }
+    .layout { margin: 0; max-width: 100%; }
+    .card { border: none; padding: 0; }
+    input, textarea, select { border: none !important; padding: 2px 0 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar no-print">
+  <div><span class="brand">Quick<span>Invoice</span></span><span class="tagline">Free. No signup. Nothing leaves your browser.</span></div>
+  <div class="actions">
+    <button class="secondary" onclick="clearAll()">New</button>
+    <button onclick="window.print()">Save as PDF</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="card">
+    <div class="grid-2">
+      <div>
+        <label>Your Business Name</label>
+        <input id="fromName" placeholder="Acme Consulting">
+        <label>Your Address / Email / Phone</label>
+        <textarea id="fromDetails" placeholder="123 Main St, City, ST&#10;you@business.com&#10;(555) 555-5555"></textarea>
+      </div>
+      <div>
+        <label>Bill To</label>
+        <input id="toName" placeholder="Client Name">
+        <label>Client Address / Email</label>
+        <textarea id="toDetails" placeholder="456 Client Ave, City, ST&#10;client@email.com"></textarea>
+      </div>
+    </div>
+
+    <div class="invoice-meta">
+      <div>
+        <label>Invoice #</label>
+        <input id="invoiceNumber" value="INV-0001">
+      </div>
+      <div>
+        <label>Date</label>
+        <input id="invoiceDate" type="date">
+      </div>
+      <div>
+        <label>Due Date</label>
+        <input id="dueDate" type="date">
+      </div>
+    </div>
+
+    <table class="items" id="itemsTable">
+      <thead>
+        <tr>
+          <th style="width:45%">Description</th>
+          <th>Qty</th>
+          <th>Rate</th>
+          <th style="text-align:right">Amount</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody"></tbody>
+    </table>
+    <button class="add-row no-print" onclick="addRow()">+ Add line item</button>
+
+    <div class="totals">
+      <div class="totals-row"><span>Subtotal</span><span id="subtotalDisplay">$0.00</span></div>
+      <div class="totals-row"><span>Tax (%)</span><input id="taxRate" type="number" min="0" step="0.1" value="0" oninput="render()"></div>
+      <div class="totals-row total"><span>Total</span><span id="totalDisplay">$0.00</span></div>
+    </div>
+
+    <label style="margin-top:24px">Notes / Payment Terms</label>
+    <textarea id="notes" placeholder="Payment due within 14 days. Thank you for your business!"></textarea>
+  </div>
+</div>
+
+<div class="footer-note">
+  Your data is saved only in this browser (localStorage) — nothing is ever sent anywhere. Refresh-safe, works
+  offline once loaded. Free and open source:
+  <a href="https://github.com/CrypLed/quick-invoice" target="_blank">source on GitHub</a>.
+  If this saved you time, tips welcome (USDC/ETH on Base or any EVM chain):
+  <span class="wallet">0x36CCCB5854e1d513A2Af94CeaFC0f886102634e2</span>
+</div>
+
+<script>
+  const STORAGE_KEY = "quickinvoice_draft_v1";
+  let items = [];
+
+  function addRow(data) {
+    items.push(data || { desc: "", qty: 1, rate: 0 });
+    renderItems();
+    render();
+  }
+
+  function removeRow(i) {
+    items.splice(i, 1);
+    renderItems();
+    render();
+  }
+
+  function renderItems() {
+    const body = document.getElementById("itemsBody");
+    body.innerHTML = "";
+    items.forEach((item, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input value="${escapeHtml(item.desc)}" oninput="items[${i}].desc=this.value" placeholder="Website redesign"></td>
+        <td><input type="number" min="0" step="0.01" value="${item.qty}" oninput="items[${i}].qty=parseFloat(this.value)||0; render()"></td>
+        <td><input type="number" min="0" step="0.01" value="${item.rate}" oninput="items[${i}].rate=parseFloat(this.value)||0; render()"></td>
+        <td class="amount" id="amt-${i}">$0.00</td>
+        <td class="no-print"><button class="row-remove" onclick="removeRow(${i})">&times;</button></td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  function escapeHtml(s) {
+    return (s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function fmt(n) {
+    return "$" + (Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function render() {
+    let subtotal = 0;
+    items.forEach((item, i) => {
+      const amt = (item.qty || 0) * (item.rate || 0);
+      subtotal += amt;
+      const el = document.getElementById(`amt-${i}`);
+      if (el) el.textContent = fmt(amt);
+    });
+    const taxRate = parseFloat(document.getElementById("taxRate").value) || 0;
+    const tax = subtotal * (taxRate / 100);
+    const total = subtotal + tax;
+    document.getElementById("subtotalDisplay").textContent = fmt(subtotal);
+    document.getElementById("totalDisplay").textContent = fmt(total);
+    saveDraft();
+  }
+
+  function saveDraft() {
+    const draft = {
+      fromName: val("fromName"), fromDetails: val("fromDetails"),
+      toName: val("toName"), toDetails: val("toDetails"),
+      invoiceNumber: val("invoiceNumber"), invoiceDate: val("invoiceDate"), dueDate: val("dueDate"),
+      taxRate: val("taxRate"), notes: val("notes"), items,
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(draft)); } catch (_) {}
+  }
+
+  function val(id) { return document.getElementById(id).value; }
+  function setVal(id, v) { if (v !== undefined) document.getElementById(id).value = v; }
+
+  function loadDraft() {
+    let draft = null;
+    try { draft = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (_) {}
+    if (draft) {
+      setVal("fromName", draft.fromName); setVal("fromDetails", draft.fromDetails);
+      setVal("toName", draft.toName); setVal("toDetails", draft.toDetails);
+      setVal("invoiceNumber", draft.invoiceNumber); setVal("invoiceDate", draft.invoiceDate); setVal("dueDate", draft.dueDate);
+      setVal("taxRate", draft.taxRate); setVal("notes", draft.notes);
+      items = Array.isArray(draft.items) && draft.items.length ? draft.items : [{ desc: "", qty: 1, rate: 0 }];
+    } else {
+      const today = new Date().toISOString().slice(0, 10);
+      setVal("invoiceDate", today);
+      items = [{ desc: "", qty: 1, rate: 0 }];
+    }
+    renderItems();
+    render();
+  }
+
+  function clearAll() {
+    if (!confirm("Start a new invoice? This clears the current draft.")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+
+  ["fromName", "fromDetails", "toName", "toDetails", "invoiceNumber", "invoiceDate", "dueDate", "notes"].forEach((id) => {
+    document.getElementById(id).addEventListener("input", saveDraft);
+  });
+
+  loadDraft();
+</script>
+
+</body>
+</html>
