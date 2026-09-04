@@ -1,0 +1,10 @@
+{
+  "name": "quick-invoice",
+  "version": "1.0.0",
+  "description": "Free, no-signup invoice generator. Static page, zero dependencies.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/calc.test.js"
+  }
+}

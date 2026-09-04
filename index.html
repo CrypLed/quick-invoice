@@ -186,6 +186,7 @@
   <span class="wallet">0x36CCCB5854e1d513A2Af94CeaFC0f886102634e2</span>
 </div>
 
+<script src="calc.js"></script>
 <script>
   const STORAGE_KEY = "quickinvoice_draft_v1";
   let items = [];
@@ -222,21 +223,13 @@
     return (s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  function fmt(n) {
-    return "$" + (Math.round(n * 100) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
   function render() {
-    let subtotal = 0;
     items.forEach((item, i) => {
-      const amt = (item.qty || 0) * (item.rate || 0);
-      subtotal += amt;
       const el = document.getElementById(`amt-${i}`);
-      if (el) el.textContent = fmt(amt);
+      if (el) el.textContent = fmt(lineAmount(item));
     });
     const taxRate = parseFloat(document.getElementById("taxRate").value) || 0;
-    const tax = subtotal * (taxRate / 100);
-    const total = subtotal + tax;
+    const { subtotal, total } = computeTotals(items, taxRate);
     document.getElementById("subtotalDisplay").textContent = fmt(subtotal);
     document.getElementById("totalDisplay").textContent = fmt(total);
     saveDraft();

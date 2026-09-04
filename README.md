@@ -21,10 +21,19 @@ anywhere, ever. There's nothing to sign up for because there's no server to sign
 
 ## Run it locally
 
-It's one file. Open `index.html` in any browser, or serve the folder with anything static:
+It's basically one file (plus `calc.js`, the totals math, kept separate so it's actually testable). Open
+`index.html` in any browser, or serve the folder with anything static:
 
 ```bash
 npx serve .
+```
+
+## Tests
+
+The calculation logic (line totals, tax, subtotal) has a real test suite — CI runs it on Node 18/20/22:
+
+```bash
+npm test
 ```
 
 ## Support this project
