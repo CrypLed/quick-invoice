@@ -38,6 +38,8 @@ npm test
 
 ## Support this project
 
+Need something like this built for your own codebase/workflow? [I take on paid automation work](https://crypled.github.io/hire-page/) — same process, real proof of work.
+
 Free, no strings attached. If it saved you time, tips are welcome via USDC/ETH on Base, Ethereum, Polygon,
 Arbitrum, or Optimism (same address on all):
 
